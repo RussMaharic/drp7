@@ -1,0 +1,208 @@
+"use client"
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, Package, User, Lock, ArrowLeft } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
+
+export default function SupplierLoginPage() {
+  const [usernameOrEmail, setUsernameOrEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usernameOrEmail,
+          password,
+          userType: 'supplier'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Store supplier name in localStorage for dashboard integration
+        localStorage.setItem('supplierName', data.user.username)
+        
+        toast({
+          title: "Welcome back!",
+          description: `Hello ${data.user.name}, you're now logged in.`,
+        })
+        
+        router.push('/supplier')
+      } else {
+        setError(data.error || 'Login failed')
+        toast({
+          title: "Login Failed",
+          description: data.error || 'Please check your credentials',
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('Network error. Please try again.')
+      toast({
+        title: "Network Error",
+        description: 'Please check your connection and try again',
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Back to home */}
+        <div className="text-center">
+          <Link href="/" className="inline-flex items-center text-sm text-green-600 hover:text-green-500 mb-4">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Home
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+            <Package className="h-6 w-6 text-green-600 dark:text-green-400" />
+          </div>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+            Supplier Login
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Sign in to your supplier dashboard
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome Back</CardTitle>
+            <CardDescription>
+              Enter your credentials to access your supplier dashboard
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="usernameOrEmail">Username or Email</Label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Input
+                      id="usernameOrEmail"
+                      name="usernameOrEmail"
+                      type="text"
+                      autoComplete="username"
+                      required
+                      className="pl-10"
+                      placeholder="Enter username or email"
+                      value={usernameOrEmail}
+                      onChange={(e) => setUsernameOrEmail(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      className="pl-10"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Don't have an account?{' '}
+                <Link
+                  href="/auth/supplier/signup"
+                  className="font-medium text-green-600 hover:text-green-500 dark:text-green-400"
+                >
+                  Sign up here
+                </Link>
+              </p>
+              <div className="mt-4 space-y-2 text-sm text-gray-500">
+                <p>
+                  Need seller access?{' '}
+                  <Link
+                    href="/auth/seller/login"
+                    className="font-medium text-blue-600 hover:text-blue-500"
+                  >
+                    Seller Login
+                  </Link>
+                </p>
+                <p>
+                  Admin access?{' '}
+                  <Link
+                    href="/login/admin"
+                    className="font-medium text-purple-600 hover:text-purple-500"
+                  >
+                    Admin Login
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

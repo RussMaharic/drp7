@@ -1,0 +1,190 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 19",
+    "Next.js 15 (App Router)",
+    "Tailwind CSS",
+    "Radix UI / shadcn/ui",
+    "Zod",
+    "React Hook Form",
+    "Node.js",
+    "PostgreSQL (Vercel Postgres)",
+    "Supabase JS",
+    "Shopify REST & GraphQL APIs"
+  ],
+  "features": [
+    {
+      "name": "Authentication & Session",
+      "description": "Email/password auth, session verification, login/logout, token handling via Supabase and custom token manager.",
+      "files": [
+        "drp5/app/api/auth/login/route.ts",
+        "drp5/app/api/auth/logout/route.ts",
+        "drp5/app/api/auth/signup/route.ts",
+        "drp5/app/api/auth/session/route.ts",
+        "drp5/app/api/auth/verify-session/route.ts",
+        "drp5/app/api/auth/check/route.ts",
+        "drp5/app/api/auth/clear/route.ts",
+        "drp5/lib/auth-service.ts",
+        "drp5/lib/token-manager.ts",
+        "drp5/lib/supabase.ts",
+        "drp5/middleware.ts",
+        "drp5/app/auth/login/page.tsx",
+        "drp5/app/login/admin/page.tsx",
+        "drp5/app/login/supplier/page.tsx",
+        "drp5/app/auth/seller/login/page.tsx",
+        "drp5/app/auth/seller/signup/page.tsx",
+        "drp5/app/auth/supplier/login/page.tsx",
+        "drp5/app/auth/supplier/signup/page.tsx"
+      ]
+    },
+    {
+      "name": "Dashboard & Layouts",
+      "description": "Admin and supplier dashboards, shared layout components, navigation, and pages.",
+      "files": [
+        "drp5/app/dashboard/layout.tsx",
+        "drp5/app/dashboard/page.tsx",
+        "drp5/app/dashboard/orders/page.tsx",
+        "drp5/app/dashboard/analytics/page.tsx",
+        "drp5/app/dashboard/stores/page.tsx",
+        "drp5/app/admin/layout.tsx",
+        "drp5/app/admin/page.tsx",
+        "drp5/app/supplier/layout.tsx",
+        "drp5/app/supplier/page.tsx",
+        "drp5/components/dashboard-layout.tsx"
+      ]
+    },
+    {
+      "name": "Store Connection & Management",
+      "description": "Connect Shopify stores, manage store credentials, and list user stores.",
+      "files": [
+        "drp5/app/connect-shopify/page.tsx",
+        "drp5/app/connect-store/page.tsx",
+        "drp5/app/api/stores/route.ts",
+        "drp5/app/api/stores/products/route.ts",
+        "drp5/app/api/stores/orders/route.ts",
+        "drp5/app/api/stores/user/route.ts",
+        "drp5/lib/services/seller-store-service.ts",
+        "drp5/lib/services/store-manager.ts",
+        "drp5/hooks/use-user-stores.ts",
+        "drp5/contexts/store-context.tsx",
+        "drp5/lib/types/store-config.ts"
+      ]
+    },
+    {
+      "name": "Shopify Integration",
+      "description": "Push/pull products and orders, webhook handling, and direct client for Shopify APIs.",
+      "files": [
+        "drp5/app/api/shopify-webhook/route.ts",
+        "drp5/app/api/push-to-shopify/route.ts",
+        "drp5/app/api/shopify-products/route.ts",
+        "drp5/app/api/shopify-orders/route.ts",
+        "drp5/app/api/shopify-orders-graphql/route.ts",
+        "drp5/app/api/shopify-orders-safe/route.ts",
+        "drp5/app/api/shopify-direct-orders/route.ts",
+        "drp5/app/api/shopify-test/route.ts",
+        "drp5/app/api/shopify-test-graphql/route.ts",
+        "drp5/app/api/shopify/stores/route.ts",
+        "drp5/lib/services/shopify-direct-client.ts"
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Product CRUD, supplier product views, and product APIs including supplier scoping.",
+      "files": [
+        "drp5/app/admin/products/page.tsx",
+        "drp5/app/supplier/products/page.tsx",
+        "drp5/app/api/products/route.ts",
+        "drp5/app/api/products/[id]/route.ts",
+        "drp5/app/api/products/supplier/route.ts",
+        "drp5/app/api/products/supplier/[id]/route.ts",
+        "drp5/lib/product-service.ts",
+        "drp5/lib/types/product.ts"
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "Order listing, cancellation, synchronization utilities, and related APIs.",
+      "files": [
+        "drp5/app/dashboard/orders/page.tsx",
+        "drp5/app/supplier/orders/page.tsx",
+        "drp5/app/api/orders/route.ts",
+        "drp5/app/api/orders/[id]/route.ts",
+        "drp5/app/api/orders/[id]/cancel/route.ts",
+        "drp5/app/api/sync-orders/route.ts"
+      ]
+    },
+    {
+      "name": "Tracking",
+      "description": "Shipment tracking APIs and documentation.",
+      "files": [
+        "drp5/app/api/tracking/route.ts",
+        "drp5/TRACKING_SYSTEM_GUIDE.md",
+        "drp5/migrations/add-order-tracking.sql"
+      ]
+    },
+    {
+      "name": "Supplier Portal",
+      "description": "Supplier-specific pages for products and orders.",
+      "files": [
+        "drp5/app/supplier/page.tsx",
+        "drp5/app/supplier/products/page.tsx",
+        "drp5/app/supplier/orders/page.tsx"
+      ]
+    },
+    {
+      "name": "Debug & Utilities",
+      "description": "Inventory debug API and general utility helpers.",
+      "files": [
+        "drp5/app/api/debug-inventory/route.ts",
+        "drp5/lib/utils.ts"
+      ]
+    },
+    {
+      "name": "UI Component Library",
+      "description": "Reusable UI primitives and components (Radix/shadcn) used across the app.",
+      "files": [
+        "drp5/components/ui/button.tsx",
+        "drp5/components/ui/input.tsx",
+        "drp5/components/ui/table.tsx",
+        "drp5/components/ui/dialog.tsx",
+        "drp5/components/ui/select.tsx",
+        "drp5/components/ui/toast.tsx",
+        "drp5/components/ui/*"
+      ]
+    },
+    {
+      "name": "Hooks",
+      "description": "Custom React hooks for toasts, responsive behavior, and store data.",
+      "files": [
+        "drp5/hooks/use-toast.ts",
+        "drp5/hooks/use-mobile.tsx",
+        "drp5/hooks/use-user-stores.ts",
+        "drp5/components/use-toast.ts",
+        "drp5/components/use-mobile.tsx"
+      ]
+    },
+    {
+      "name": "Migrations & Scripts",
+      "description": "SQL migrations and scripts for evolving the database schema and data.",
+      "files": [
+        "drp5/migrations/add-customer-phone.sql",
+        "drp5/migrations/add-order-status-unique-constraint.sql",
+        "drp5/migrations/add-order-tracking.sql",
+        "drp5/migration-add-inventory.sql",
+        "drp5/scripts/migrate-shopify-tokens.sql"
+      ]
+    }
+  ]
+}
+
+
+
+
+
+
+
+
+
+
+
+
