@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Only create client if environment variables are available
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 async function initializeAll() {
   try {
@@ -209,6 +212,14 @@ async function initializeAll() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!supabase) {
+      return NextResponse.json({
+        error: 'Supabase not configured',
+        message: 'Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables'
+      }, { status: 500 });
+    }
+
     const result = await initializeAll();
     return NextResponse.json(result);
   } catch (error) {
@@ -222,6 +233,14 @@ export async function POST(request: NextRequest) {
 // Convenience GET so you can hit it in the browser
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!supabase) {
+      return NextResponse.json({
+        error: 'Supabase not configured',
+        message: 'Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables'
+      }, { status: 500 });
+    }
+
     const result = await initializeAll();
     return NextResponse.json(result);
   } catch (error) {
