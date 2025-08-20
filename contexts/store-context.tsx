@@ -38,6 +38,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       
+      // Only fetch stores if we're on dashboard pages, not auth pages
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+      if (currentPath.includes('/auth/') || currentPath.includes('/login/')) {
+        setConnectedStores([])
+        setLoading(false)
+        return
+      }
+      
       // Fetch user-specific stores only
       const userStoresResponse = await fetch('/api/stores/user');
 
@@ -209,6 +217,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const refreshWalletBalance = useCallback(async () => {
+    // Only fetch wallet balance if we're on dashboard pages
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+    if (currentPath.includes('/auth/') || currentPath.includes('/login/')) {
+      return
+    }
+    
     if (selectedStore) {
       try {
         const balance = await WalletService.getWalletBalance(selectedStore)

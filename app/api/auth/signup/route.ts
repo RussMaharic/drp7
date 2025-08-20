@@ -4,7 +4,7 @@ import { AuthService, type SignupCredentials } from '@/lib/auth-service'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { username, email, password, name, userType, companyName }: SignupCredentials = body
+    const { username, email, password, name, userType, companyName, paymentOrderId, subscriptionAmount }: SignupCredentials = body
 
     // Validate required fields
     if (!username || !email || !password || !name || !userType) {
@@ -22,6 +22,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // For seller signup, verify payment if paymentOrderId is provided
+    if (userType === 'seller' && paymentOrderId) {
+      const verifyResponse = await fetch(`${request.nextUrl.origin}/api/payments/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId: paymentOrderId })
+      })
+
+      const verifyData = await verifyResponse.json()
+      
+      if (!verifyData.success || !verifyData.isPaid) {
+        return NextResponse.json(
+          { success: false, error: 'Payment verification failed. Please complete payment first.' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Attempt signup
     const result = await AuthService.signup({
       username,
@@ -29,7 +49,9 @@ export async function POST(request: NextRequest) {
       password,
       name,
       userType,
-      companyName
+      companyName,
+      paymentOrderId,
+      subscriptionAmount
     })
 
     if (!result.success) {

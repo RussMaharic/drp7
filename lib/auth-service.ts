@@ -28,6 +28,8 @@ export interface SignupCredentials {
   name: string
   userType: UserType
   companyName?: string
+  paymentOrderId?: string
+  subscriptionAmount?: string
 }
 
 export interface SessionData {
@@ -47,7 +49,7 @@ export class AuthService {
 
   static async signup(credentials: SignupCredentials): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
-      const { username, email, password, name, userType, companyName } = credentials
+      const { username, email, password, name, userType, companyName, paymentOrderId, subscriptionAmount } = credentials
 
       // Validate input
       if (!username || !email || !password || !name) {
@@ -99,7 +101,13 @@ export class AuthService {
         email,
         password_hash: hashedPassword,
         name,
-        ...(userType === 'supplier' && companyName && { company_name: companyName })
+        ...(userType === 'supplier' && companyName && { company_name: companyName }),
+        ...(userType === 'seller' && paymentOrderId && { 
+          payment_order_id: paymentOrderId,
+          payment_status: 'paid',
+          payment_date: new Date().toISOString()
+        }),
+        ...(userType === 'seller' && subscriptionAmount && { subscription_amount: Number(subscriptionAmount) })
       }
 
       const { data: newUser, error: insertError } = await supabase

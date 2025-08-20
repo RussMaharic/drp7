@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Store, User, Lock, ArrowLeft } from 'lucide-react'
+import { Loader2, Store, User, Lock, ArrowLeft, CheckCircle } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
 export default function SellerLoginPage() {
@@ -17,7 +17,19 @@ export default function SellerLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
+
+  // Check for success message in URL
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message) {
+      toast({
+        title: "Success",
+        description: message,
+      })
+    }
+  }, [searchParams, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
