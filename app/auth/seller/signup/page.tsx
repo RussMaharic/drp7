@@ -11,10 +11,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Store, User, Mail, Lock, ArrowLeft, UserPlus, CreditCard, Check, Star } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
-// Load Cashfree SDK
+// TypeScript declarations for Cashfree SDK
 declare global {
   interface Window {
-    Cashfree: any;
+    Cashfree: (config: { mode: 'sandbox' | 'production' }) => {
+      checkout: (options: { paymentSessionId: string; redirectTarget: string }) => void
+    }
   }
 }
 
@@ -77,14 +79,62 @@ export default function SellerSignupPage() {
 
   // Load Cashfree SDK
   useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js'
-    script.onload = () => setCashfreeLoaded(true)
-    document.head.appendChild(script)
-
-    return () => {
-      document.head.removeChild(script)
+    const loadCashfreeSDK = async () => {
+      console.log('Starting Cashfree SDK load...')
+      
+      // Try multiple URLs for better reliability
+      const urls = [
+        'https://sdk.cashfree.com/js/ui/2.0/cashfree.prod.js',
+        'https://sdk.cashfree.com/js/v3/cashfree.js',
+        'https://cdn.cashfree.com/js/v3/cashfree.js'
+      ]
+      
+      const loadScript = (url: string) => {
+        return new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = url
+          script.async = true
+          script.defer = true
+          
+          script.onload = () => {
+            console.log(`Cashfree SDK loaded successfully from ${url}`)
+            // Wait a bit for the SDK to initialize
+            setTimeout(() => {
+              if (typeof window.Cashfree !== 'undefined') {
+                setCashfreeLoaded(true)
+                resolve()
+              } else {
+                reject(new Error('SDK loaded but Cashfree object not available'))
+              }
+            }, 100)
+          }
+          
+          script.onerror = (error) => {
+            console.error(`Failed to load Cashfree SDK from ${url}:`, error)
+            reject(new Error(`Failed to load from ${url}`))
+          }
+          
+          document.head.appendChild(script)
+        })
+      }
+      
+      // Try each URL until one works
+      for (const url of urls) {
+        try {
+          await loadScript(url)
+          break // Success, exit loop
+        } catch (error) {
+          console.log(`Failed to load from ${url}, trying next...`)
+          if (url === urls[urls.length - 1]) {
+            // Last URL failed
+            console.error('All Cashfree SDK URLs failed')
+            setError('Failed to load payment system. Please refresh the page.')
+          }
+        }
+      }
     }
+    
+    loadCashfreeSDK()
   }, [])
 
   const handleError = (errorMessage: string, errorStep?: 'form' | 'payment') => {
@@ -223,17 +273,49 @@ export default function SellerSignupPage() {
       sessionStorage.setItem('selectedPlanAmount', amount.toString())
 
       // Initialize Cashfree and open checkout
-      const cashfree = window.Cashfree({
-        mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
-      })
-
-      const checkoutOptions = {
-        paymentSessionId: orderData.paymentSessionId,
-        redirectTarget: '_self'
+      console.log('Initializing Cashfree checkout with session ID:', orderData.paymentSessionId)
+      console.log('Order data received:', orderData)
+      console.log('Window location:', window.location.href)
+      console.log('Window hostname:', window.location.hostname)
+      
+      // Check if Cashfree SDK is available
+      if (typeof window.Cashfree === 'undefined') {
+        console.error('Cashfree SDK not found on window object')
+        console.log('Available window properties:', Object.keys(window).filter(key => key.toLowerCase().includes('cashfree')))
+        throw new Error('Cashfree payment system not loaded. Please refresh the page.')
       }
 
-      // Open Cashfree checkout
-      cashfree.checkout(checkoutOptions)
+      // Determine environment - use a more reliable method
+      const hostname = window.location.hostname
+      // For Vercel deployments, always use sandbox mode for testing
+      // Change this to production only when you have production Cashfree credentials
+      const mode = 'sandbox' // Always use sandbox for now
+      
+      console.log('Cashfree mode:', mode, 'Hostname:', hostname)
+      console.log('Using sandbox mode for testing')
+      
+      try {
+        const cashfree = window.Cashfree({
+          mode: mode
+        })
+        
+        console.log('Cashfree instance created:', cashfree)
+        console.log('Checkout method available:', typeof cashfree.checkout)
+
+        const checkoutOptions = {
+          paymentSessionId: orderData.paymentSessionId,
+          redirectTarget: '_self'
+        }
+
+        console.log('Opening Cashfree checkout with options:', checkoutOptions)
+        
+        // Open Cashfree checkout
+        cashfree.checkout(checkoutOptions)
+      } catch (sdkError) {
+        console.error('Error creating Cashfree instance:', sdkError)
+        const errorMessage = sdkError instanceof Error ? sdkError.message : 'Unknown SDK error'
+        throw new Error(`Failed to initialize payment system: ${errorMessage}`)
+      }
 
     } catch (error) {
       console.error('Payment error:', error)
