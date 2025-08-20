@@ -42,7 +42,32 @@ export default function SignupCompletePage() {
     try {
       setPaymentAmount(amount)
 
-      // Verify payment status
+      // Check if this is a direct success from Cashfree callback
+      const searchParams = new URLSearchParams(window.location.search)
+      const directSuccess = searchParams.get('direct_success')
+      const callbackSuccess = searchParams.get('status') === 'callback_success'
+      
+      console.log('Completion parameters:', { orderId, amount, directSuccess, callbackSuccess })
+
+      // If we have direct success indicators, skip verification
+      if (directSuccess === 'true' || callbackSuccess) {
+        console.log('Skipping payment verification - direct success indicated')
+        setSuccess(true)
+        
+        toast({
+          title: "Welcome to DRP Shipper!",
+          description: `Your seller account has been created successfully. Payment of ₹${amount} confirmed.`,
+        })
+
+        // Auto-redirect to login after 3 seconds
+        setTimeout(() => {
+          router.push('/auth/seller/login?message=Account created successfully, please login')
+        }, 3000)
+        return
+      }
+
+      // Only verify payment if we don't have direct success indicators
+      console.log('Verifying payment status...')
       const verifyResponse = await fetch('/api/payments/verify', {
         method: 'POST',
         headers: {

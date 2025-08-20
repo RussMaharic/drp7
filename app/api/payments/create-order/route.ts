@@ -70,9 +70,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order with Cashfree
+    console.log('Creating Cashfree order with request:', orderRequest)
     const response = await cashfree.PGCreateOrder(orderRequest)
     
+    console.log('Cashfree order creation response:', response)
+    
     if (response.data) {
+      console.log('Order created successfully:', {
+        orderId: response.data.order_id,
+        paymentSessionId: response.data.payment_session_id,
+        orderAmount: response.data.order_amount
+      })
+      
       return NextResponse.json({
         success: true,
         orderId: response.data.order_id,
@@ -80,6 +89,7 @@ export async function POST(request: NextRequest) {
         orderAmount: response.data.order_amount
       })
     } else {
+      console.error('No response data from Cashfree')
       return NextResponse.json(
         { success: false, error: 'Failed to create order' },
         { status: 500 }

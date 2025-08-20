@@ -35,9 +35,12 @@ export async function POST(request: NextRequest) {
 
     // Verify order status with Cashfree
     const version = '2023-08-01'
+    console.log('Fetching order from Cashfree:', { version, orderId })
+    
     const response = await cashfree.PGFetchOrder(version, orderId)
     
-    console.log('Cashfree verification response:', response.data)
+    console.log('Cashfree verification response:', response)
+    console.log('Response data:', response.data)
     
     if (response.data) {
       const orderStatus = response.data.order_status
