@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,19 +10,10 @@ import { Loader2, CheckCircle, XCircle, ArrowRight } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { AuthService } from '@/lib/auth-service'
 
-export default function SignupCompletePage() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [paymentAmount, setPaymentAmount] = useState<string>('')
-  const router = useRouter()
+// Separate component for search params logic
+function SearchParamsHandler({ onComplete }: { onComplete: (orderId: string, amount: string) => void }) {
   const searchParams = useSearchParams()
-  const { toast } = useToast()
-
-  useEffect(() => {
-    completeSignup()
-  }, [])
-
+  
   useEffect(() => {
     // Check if we have the required parameters
     const orderId = searchParams.get('order_id')
@@ -30,18 +21,26 @@ export default function SignupCompletePage() {
     const status = searchParams.get('status')
     
     console.log('Completion page loaded with:', { orderId, amount, status })
-  }, [searchParams])
+    
+    if (orderId && amount) {
+      onComplete(orderId, amount)
+    }
+  }, [searchParams, onComplete])
+  
+  return null
+}
 
-  const completeSignup = async () => {
+export default function SignupCompletePage() {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState<string>('')
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const handleComplete = async (orderId: string, amount: string) => {
     try {
-      const orderId = searchParams.get('order_id')
-      const amount = searchParams.get('amount')
-      
-      if (!orderId) {
-        throw new Error('Invalid payment session')
-      }
-
-      setPaymentAmount(amount || '')
+      setPaymentAmount(amount)
 
       // Verify payment status
       const verifyResponse = await fetch('/api/payments/verify', {
@@ -119,6 +118,9 @@ export default function SignupCompletePage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <Suspense fallback={null}>
+        <SearchParamsHandler onComplete={handleComplete} />
+      </Suspense>
       <div className="max-w-md w-full space-y-8">
         {/* Back to home */}
         <div className="text-center">

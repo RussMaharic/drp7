@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,23 @@ declare global {
   }
 }
 
+// Separate component for search params logic
+function SearchParamsHandler({ onError }: { onError: (error: string, step?: 'form' | 'payment') => void }) {
+  const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    const error = searchParams.get('error')
+    
+    if (error === 'payment_failed') {
+      onError('Payment failed. Please try again.', 'payment')
+    } else if (error === 'callback_error') {
+      onError('Payment processing error. Please try again.')
+    }
+  }, [searchParams, onError])
+  
+  return null
+}
+
 export default function SellerSignupPage() {
   const [formData, setFormData] = useState({
     username: '',
@@ -33,7 +50,6 @@ export default function SellerSignupPage() {
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [cashfreeLoaded, setCashfreeLoaded] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
 
   // Payment plans
@@ -66,22 +82,17 @@ export default function SellerSignupPage() {
     script.onload = () => setCashfreeLoaded(true)
     document.head.appendChild(script)
 
-    // Check for payment errors in URL
-    const error = searchParams.get('error')
-    
-    if (error === 'payment_failed') {
-      setError('Payment failed. Please try again.')
-      setStep('payment')
-    } else if (error === 'callback_error') {
-      setError('Payment processing error. Please try again.')
-    }
-
     return () => {
       document.head.removeChild(script)
     }
-  }, [searchParams])
+  }, [])
 
-
+  const handleError = (errorMessage: string, errorStep?: 'form' | 'payment') => {
+    setError(errorMessage)
+    if (errorStep) {
+      setStep(errorStep)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -269,6 +280,10 @@ export default function SellerSignupPage() {
             }
           </p>
         </div>
+
+        <Suspense fallback={<div>Loading search params...</div>}>
+          <SearchParamsHandler onError={handleError} />
+        </Suspense>
 
         {step === 'form' ? (
           <Card>

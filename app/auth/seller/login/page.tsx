@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -11,25 +11,34 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Store, User, Lock, ArrowLeft, CheckCircle } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
+// Separate component for search params logic
+function SearchParamsHandler({ onMessage }: { onMessage: (message: string) => void }) {
+  const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message) {
+      onMessage(message)
+    }
+  }, [searchParams, onMessage])
+  
+  return null
+}
+
 export default function SellerLoginPage() {
   const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
 
-  // Check for success message in URL
-  useEffect(() => {
-    const message = searchParams.get('message')
-    if (message) {
-      toast({
-        title: "Success",
-        description: message,
-      })
-    }
-  }, [searchParams, toast])
+  const handleMessage = (message: string) => {
+    toast({
+      title: "Success",
+      description: message,
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,6 +90,9 @@ export default function SellerLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <Suspense fallback={null}>
+        <SearchParamsHandler onMessage={handleMessage} />
+      </Suspense>
       <div className="max-w-md w-full space-y-8">
         {/* Back to home */}
         <div className="text-center">
