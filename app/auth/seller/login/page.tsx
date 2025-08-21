@@ -14,13 +14,25 @@ import { useToast } from '@/components/ui/use-toast'
 // Separate component for search params logic
 function SearchParamsHandler({ onMessage }: { onMessage: (message: string) => void }) {
   const searchParams = useSearchParams()
+  const [messageShown, setMessageShown] = useState(false)
   
   useEffect(() => {
+    // Prevent showing the same message multiple times
+    if (messageShown) {
+      return
+    }
+    
     const message = searchParams.get('message')
     if (message) {
+      setMessageShown(true)
       onMessage(message)
+      
+      // Clean up the URL after showing the message
+      const url = new URL(window.location.href)
+      url.searchParams.delete('message')
+      window.history.replaceState({}, '', url.toString())
     }
-  }, [searchParams, onMessage])
+  }, [searchParams, onMessage, messageShown])
   
   return null
 }

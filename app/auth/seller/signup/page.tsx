@@ -84,7 +84,6 @@ export default function SellerSignupPage() {
       
       // Try multiple URLs for better reliability
       const urls = [
-        'https://sdk.cashfree.com/js/ui/2.0/cashfree.prod.js',
         'https://sdk.cashfree.com/js/v3/cashfree.js',
         'https://cdn.cashfree.com/js/v3/cashfree.js'
       ]
@@ -111,6 +110,10 @@ export default function SellerSignupPage() {
           
           script.onerror = (error) => {
             console.error(`Failed to load Cashfree SDK from ${url}:`, error)
+            // Remove the failed script from DOM
+            if (document.head.contains(script)) {
+              document.head.removeChild(script)
+            }
             reject(new Error(`Failed to load from ${url}`))
           }
           
@@ -121,7 +124,9 @@ export default function SellerSignupPage() {
       // Try each URL until one works
       for (const url of urls) {
         try {
+          console.log(`Trying to load from: ${url}`)
           await loadScript(url)
+          console.log(`Successfully loaded from: ${url}`)
           break // Success, exit loop
         } catch (error) {
           console.log(`Failed to load from ${url}, trying next...`)
@@ -245,8 +250,12 @@ export default function SellerSignupPage() {
         throw new Error('Account not found. Please try signing up again.')
       }
 
-      // Create Cashfree order
-      const orderId = `seller_${accountId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      // Create Cashfree order - use a simpler, shorter format
+      const timestamp = Date.now()
+      const randomSuffix = Math.random().toString(36).substr(2, 6)
+      const orderId = `seller_${timestamp}_${randomSuffix}`
+      
+      console.log('Generated order ID:', orderId)
       
       const orderResponse = await fetch('/api/payments/create-order', {
         method: 'POST',
@@ -309,8 +318,63 @@ export default function SellerSignupPage() {
 
         console.log('Opening Cashfree checkout with options:', checkoutOptions)
         
-        // Open Cashfree checkout
-        cashfree.checkout(checkoutOptions)
+        // Open Cashfree checkout and handle the promise
+        try {
+          const checkoutResult = await cashfree.checkout(checkoutOptions)
+          
+          console.log('Cashfree checkout completed:', checkoutResult)
+          console.log('Checkout result type:', typeof checkoutResult)
+          console.log('Checkout result keys:', checkoutResult ? Object.keys(checkoutResult) : 'null')
+          
+          // Handle different possible response formats
+          if (checkoutResult && checkoutResult.order && checkoutResult.order.status) {
+            const orderStatus = checkoutResult.order.status
+            console.log('Payment completed with status:', orderStatus)
+            
+            if (orderStatus === 'PAID') {
+              // Payment successful - redirect to completion page
+              console.log('✅ Payment successful, redirecting to completion page')
+              window.location.href = `/auth/seller/signup/complete?order_id=${encodeURIComponent(orderId)}&amount=${amount}&status=paid&direct_success=true`
+              return
+            } else {
+              throw new Error(`Payment failed with status: ${orderStatus}`)
+            }
+          } else if (checkoutResult && checkoutResult.status === 'PAID') {
+            // Alternative response format
+            console.log('✅ Payment successful (alternative format), redirecting to completion page')
+            window.location.href = `/auth/seller/signup/complete?order_id=${encodeURIComponent(orderId)}&amount=${amount}&status=paid&direct_success=true`
+            return
+          } else {
+            // Fallback: assume success and verify via API
+            console.log('No clear status from checkout, assuming success and verifying via API...')
+            
+            // Wait a moment for the payment to be processed
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            
+            const verifyResponse = await fetch('/api/payments/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ orderId })
+            })
+
+            const verifyData = await verifyResponse.json()
+            
+            if (verifyData.success && verifyData.isPaid) {
+              console.log('✅ Payment verified via API, redirecting to completion page')
+              window.location.href = `/auth/seller/signup/complete?order_id=${encodeURIComponent(orderId)}&amount=${verifyData.paymentAmount}&status=paid`
+            } else {
+              throw new Error(verifyData.error || 'Payment verification failed')
+            }
+          }
+        } catch (checkoutError) {
+          console.log('Checkout promise error or unexpected format:', checkoutError)
+          // If checkout doesn't return a promise or returns unexpected format,
+          // assume it's using redirect mode and let the callback handle it
+          console.log('Assuming redirect mode - payment will be handled by callback')
+          // Don't throw error here, let the redirect callback handle the result
+        }
       } catch (sdkError) {
         console.error('Error creating Cashfree instance:', sdkError)
         const errorMessage = sdkError instanceof Error ? sdkError.message : 'Unknown SDK error'
